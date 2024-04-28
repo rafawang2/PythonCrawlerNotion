@@ -7,6 +7,7 @@ from res.GetPageData import page_crawel
 from res import NotionAPI
 from res.LoadingBar import ANSI_string
 from res.NotionAPI import set_working_directory
+import json
 
 def generate_author_url(keyword):   #輸入作者後產生作者頁面之連結
     link = "https://search.books.com.tw/search/query/cat/1/v/1/adv_author/1/key/" + keyword
@@ -59,8 +60,23 @@ if(res.status_code == requests.codes.ok):
         os.makedirs(os.path.join(current_directory, "作者csv"))
     file_path = os.path.join(current_directory, "作者csv" , keyword + ".csv")
     df.to_csv(file_path,index=False,encoding='utf-8')
-    NotionAPI.EstablishFullDatabase(df)
+    
+    secret_json_path = os.getcwd() + '\\SECRET.json'
+    file = open(secret_json_path)
+    data = json.load(file)
+    #integration
+    NOTION_TOKEN = data['notion_id']
+    #Page
+    PAGE_ID = data['page_id']
+    file.close()
+    
+    if(NOTION_TOKEN != "" or PAGE_ID != ""):
+        upload = input('是否要將資料匯入Notion(y/n)\n')
+        if(upload=='y'):
+            NotionAPI.EstablishFullDatabase(keyword=keyword,df=df)
+        else:
+            print('未啟用自動上傳，可以使用Notion的匯入csv功能建立database')
+    else:
+        print('未偵測到SECRET.json裡的Notion id')    
 else:
     print('存取被拒')
-
-#('res','.')

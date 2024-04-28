@@ -1,6 +1,7 @@
 import requests
 import json
 import pandas as pd
+import res.LoadingBar as loadingbar
 from res.LoadingBar import ANSI_string
 import sys
 import os
@@ -18,48 +19,86 @@ file = open(secret_json_path)
 data = json.load(file)
 
 #integration
-NOTION_TOKEN = data['id']
+NOTION_TOKEN = data['notion_id']
 
 #Database
-DATABASE_ID = data['database']
+PAGE_ID = data['page_id']
 
 file.close()
 
+class NotionClient():
+    def __init__(self):
+        self.notion_key = "secret_7nnWrn1Gwij3unEuz8XboKqDxC2wxJKJPdf215dNCuM"
+        self.default_headers = {'Authorization': f"Bearer {self.notion_key}",
+                                'Content-Type': 'application/json', 'Notion-Version': '2022-06-28'}
+        self.session = requests.Session()
+        self.session.headers.update(self.default_headers)    
 
-headers = {
-    "Authorization": "Bearer " + NOTION_TOKEN,
-    "Content-Type": "application/json",
-    "Notion-Version": "2022-06-28"
-}
+    def create_database(self, data):
+        url = "https://api.notion.com/v1/databases"
+        response = self.session.post(url, json=data)
+        return response.json()
 
-def get_pages(num_pages=None):
-    """
-    If num_pages is None, get all pages, otherwise just the defined number.
-    """
-    url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
+    def create_page(self, data, databaseID):
+        url = "https://api.notion.com/v1/pages"
+        payload = {"parent": {"database_id": databaseID}, "properties": data}
+        response = requests.post(url, headers=self.default_headers, json=payload)
+        return response.json(),response.status_code
 
-    get_all = num_pages is None
-    page_size = 1000 if get_all else num_pages
-
-    payload = {"page_size": page_size}
-    response = requests.post(url, json=payload, headers=headers)
-
-    data = response.json()
-
-    # Comment this out to dump all data to a file
-    import json
-    with open('db.json', 'w', encoding='utf8') as f:
-       json.dump(data, f, ensure_ascii=False, indent=4)
-
-    results = data["results"]
-    while data["has_more"] and get_all:
-        payload = {"page_size": page_size, "start_cursor": data["next_cursor"]}
-        url = f"https://api.notion.com/v1/databases/{DATABASE_ID}/query"
-        response = requests.post(url, json=payload, headers=headers)
-        data = response.json()
-        results.extend(data["results"])
-    return results,data
-
+def CreateDatabase(page_id,author):
+    notion_client = NotionClient()
+    print("建立database中，請等待")
+    loadingbar.waiting_loading_bar(1)
+    # Create a database with some properties
+    data = {
+        "parent": {
+            "type": "page_id",
+            "page_id": page_id
+        },
+        "title": [
+            {
+                "type": "text",
+                "text": {
+                    "content": f"{author}",
+                    "link": None
+                }
+            }
+        ],
+        "properties": {
+            "書名": {
+                "title": {}
+            },
+            "書本封面": {
+                 "files": {}
+            },
+            "書本連結": {
+                 "url": {}
+            },
+            "ISBN": {
+                "rich_text": {}
+            },
+            "作者": {
+                "rich_text": {}
+            },   
+            "出版社": {
+                "rich_text": {}
+            },
+            "出版日期": {
+                "date": {}
+            }    
+        }
+    }
+    catches_create_response = notion_client.create_database(data)
+    json_str = json.dumps(catches_create_response, indent=2)
+    # # 寫入到文件
+    # with open('catches_database.json', 'w', encoding='utf-8') as f:
+    #     f.write(json_str)
+    # f.close()
+    #print(json_str)
+    catches_dict = json.loads(json_str)
+    # 從字典中取得 "id" 的值
+    database_ID = catches_dict["id"]
+    return database_ID
 
 def NormalizeDate(date):
     if(not ('/' in date)):
@@ -73,10 +112,9 @@ def NormalizeDate(date):
     if(len(day)==1):
         day = '0' + day
     return f'{year}-{mon}-{day}'
-    
 
-def create_page(title,book_img,ISBN,author,publish,published_date,book_link): #寫出新的
-    get_pages()
+def CreatePage(databaseID,title=None,book_img=None,ISBN=None,author=None,publish=None,published_date=None,book_link=None):
+    notion_client = NotionClient()
     published_date = NormalizeDate(published_date)
     data = {
         "書名": {"title": [{"text": {"content": title}}]},
@@ -123,47 +161,13 @@ def create_page(title,book_img,ISBN,author,publish,published_date,book_link): #�
         "出版日期": {"date": {"start": published_date, "end": None}},
         "書本連結": {"url":book_link}
     }
-    create_url = "https://api.notion.com/v1/pages"
-
-    payload = {"parent": {"database_id": DATABASE_ID}, "properties": data}
-    res = requests.post(create_url, headers=headers, json=payload)  #帶著資料前往API，API會將資料(data)丟進Notion
-    if(res.status_code==200):
+    status_code = notion_client.create_page(data,databaseID)[1]
+    if(status_code==200):
         print(ANSI_string(ANSI_string(f'{title}',bold=True)+'上傳至Notion成功',color='green'))
     else:
         print(ANSI_string(ANSI_string(f'{title}',bold=True)+'上傳至Notion失敗',color='red'))
-    return res
 
-def delete_page(page_id: str):
-    url = f"https://api.notion.com/v1/pages/{page_id}"
-
-    payload = {"archived": True}
-
-    res = requests.patch(url, json=payload, headers=headers)
-    return res
-
-def delete_All_page():
-    data = get_pages(100)[1]
-    page_cnt = 0
-    while(data['results']!=[]):
-        page_cnt = page_cnt+1 
-        data = get_pages()[1]
-        ids = [result['id'] for result in data['results']]
-        ids_copy = ids.copy()
-        total_items = len(ids)
-        for id in ids_copy:
-            completed_items = total_items - len(ids) +1
-            progress_percentage = int((completed_items / total_items) * 100)
-            progress = '[' + ANSI_string('=',color='cyan') * (progress_percentage // 5) + ANSI_string('=',color='yellow') * (20 - progress_percentage // 5) + ']'
-            sys.stdout.write('\r' + progress + f' 刪除舊資料第{page_cnt}頁，請等待...' + f'({completed_items}/{total_items} , {int((completed_items/total_items)*100)}%)')
-            sys.stdout.flush()
-            delete_page(id)
-            ids.remove(id)
-        sys.stdout.write('\n')
-        ids.clear()
-
-def EstablishFullDatabase(df = pd.DataFrame({'書名': [], '書本封面':[], 'ISBN': [], '作者':[], '出版社':[],'出版日期':[], '書本連結': []})):
-    delete_All_page()
+def EstablishFullDatabase(keyword,df = pd.DataFrame({'書名': [], '書本封面':[], 'ISBN': [], '作者':[], '出版社':[],'出版日期':[], '書本連結': []})):
+    databaseID = CreateDatabase(author=keyword,page_id=PAGE_ID)
     for i in range(len(df['書名'])):
-        create_page(title=df['書名'][i],book_img=df['書本封面'][i],ISBN=df['ISBN'][i],author=df['作者'][i],publish=df['出版社'][i],published_date=df['出版日期'][i],book_link=df['書本連結'][i])
-
-get_pages()
+        CreatePage(databaseID,title=df['書名'][i],book_img=df['書本封面'][i],ISBN=df['ISBN'][i],author=df['作者'][i],publish=df['出版社'][i],published_date=df['出版日期'][i],book_link=df['書本連結'][i])
