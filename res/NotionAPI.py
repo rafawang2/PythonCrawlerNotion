@@ -28,7 +28,7 @@ file.close()
 
 class NotionClient():
     def __init__(self):
-        self.notion_key = "secret_7nnWrn1Gwij3unEuz8XboKqDxC2wxJKJPdf215dNCuM"
+        self.notion_key = NOTION_TOKEN
         self.default_headers = {'Authorization': f"Bearer {self.notion_key}",
                                 'Content-Type': 'application/json', 'Notion-Version': '2022-06-28'}
         self.session = requests.Session()
@@ -54,6 +54,10 @@ def CreateDatabase(page_id,author):
         "parent": {
             "type": "page_id",
             "page_id": page_id
+        },
+        "icon": {
+            "type": "emoji",
+                "emoji": "📖"
         },
         "title": [
             {
@@ -90,11 +94,11 @@ def CreateDatabase(page_id,author):
     }
     catches_create_response = notion_client.create_database(data)
     json_str = json.dumps(catches_create_response, indent=2)
-    # # 寫入到文件
-    # with open('catches_database.json', 'w', encoding='utf-8') as f:
-    #     f.write(json_str)
-    # f.close()
-    #print(json_str)
+    #寫入到文件
+    with open('catches_database.json', 'w', encoding='utf-8') as f:
+        f.write(json_str)
+    f.close()
+    print(json_str)
     catches_dict = json.loads(json_str)
     # 從字典中取得 "id" 的值
     database_ID = catches_dict["id"]
@@ -161,7 +165,9 @@ def CreatePage(databaseID,title=None,book_img=None,ISBN=None,author=None,publish
         "出版日期": {"date": {"start": published_date, "end": None}},
         "書本連結": {"url":book_link}
     }
-    status_code = notion_client.create_page(data,databaseID)[1]
+    
+    status_code = notion_client.create_page(data = data,databaseID = databaseID)[1]
+    
     if(status_code==200):
         print(ANSI_string(ANSI_string(f'{title}',bold=True)+'上傳至Notion成功',color='green'))
     else:
@@ -170,4 +176,4 @@ def CreatePage(databaseID,title=None,book_img=None,ISBN=None,author=None,publish
 def EstablishFullDatabase(keyword,df = pd.DataFrame({'書名': [], '書本封面':[], 'ISBN': [], '作者':[], '出版社':[],'出版日期':[], '書本連結': []})):
     databaseID = CreateDatabase(author=keyword,page_id=PAGE_ID)
     for i in range(len(df['書名'])):
-        CreatePage(databaseID,title=df['書名'][i],book_img=df['書本封面'][i],ISBN=df['ISBN'][i],author=df['作者'][i],publish=df['出版社'][i],published_date=df['出版日期'][i],book_link=df['書本連結'][i])
+        CreatePage(databaseID = databaseID,title=df['書名'][i],book_img=df['書本封面'][i],ISBN=df['ISBN'][i],author=df['作者'][i],publish=df['出版社'][i],published_date=df['出版日期'][i],book_link=df['書本連結'][i])
