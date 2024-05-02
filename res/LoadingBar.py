@@ -1,7 +1,7 @@
 import time
 import sys
 
-def ANSI_string(s, color=None, background=None, bold=False):
+def ANSI_string(s="", color=None, background=None, bold=False):
     colors = {
         'black': '\033[30m',
         'red': '\033[31m',

@@ -1,0 +1,93 @@
+{
+  "object": "database",
+  "id": "9417370c-b62e-4337-bb84-e8e9d8c04417",
+  "cover": null,
+  "icon": {
+    "type": "emoji",
+    "emoji": "\ud83d\udcd6"
+  },
+  "created_time": "2024-05-02T14:54:00.000Z",
+  "created_by": {
+    "object": "user",
+    "id": "fb3340b9-6266-4233-8920-4219b9902e89"
+  },
+  "last_edited_by": {
+    "object": "user",
+    "id": "fb3340b9-6266-4233-8920-4219b9902e89"
+  },
+  "last_edited_time": "2024-05-02T14:54:00.000Z",
+  "title": [
+    {
+      "type": "text",
+      "text": {
+        "content": "Notion",
+        "link": null
+      },
+      "annotations": {
+        "bold": false,
+        "italic": false,
+        "strikethrough": false,
+        "underline": false,
+        "code": false,
+        "color": "default"
+      },
+      "plain_text": "Notion",
+      "href": null
+    }
+  ],
+  "description": [],
+  "is_inline": false,
+  "properties": {
+    "\u66f8\u672c\u5c01\u9762": {
+      "id": "KbIK",
+      "name": "\u66f8\u672c\u5c01\u9762",
+      "type": "files",
+      "files": {}
+    },
+    "ISBN": {
+      "id": "XAbs",
+      "name": "ISBN",
+      "type": "rich_text",
+      "rich_text": {}
+    },
+    "\u51fa\u7248\u793e": {
+      "id": "bVz%7B",
+      "name": "\u51fa\u7248\u793e",
+      "type": "rich_text",
+      "rich_text": {}
+    },
+    "\u51fa\u7248\u65e5\u671f": {
+      "id": "c%5DO%5B",
+      "name": "\u51fa\u7248\u65e5\u671f",
+      "type": "date",
+      "date": {}
+    },
+    "\u66f8\u672c\u9023\u7d50": {
+      "id": "fOqx",
+      "name": "\u66f8\u672c\u9023\u7d50",
+      "type": "url",
+      "url": {}
+    },
+    "\u4f5c\u8005": {
+      "id": "x%3E~l",
+      "name": "\u4f5c\u8005",
+      "type": "rich_text",
+      "rich_text": {}
+    },
+    "\u66f8\u540d": {
+      "id": "title",
+      "name": "\u66f8\u540d",
+      "type": "title",
+      "title": {}
+    }
+  },
+  "parent": {
+    "type": "page_id",
+    "page_id": "24a581d7-ff50-436a-b0ef-93f2b801954c"
+  },
+  "url": "https://www.notion.so/9417370cb62e4337bb84e8e9d8c04417",
+  "public_url": null,
+  "archived": false,
+  "in_trash": false,
+  "request_id": "1b718286-cc6b-4444-b233-2aef51321de4"
+}

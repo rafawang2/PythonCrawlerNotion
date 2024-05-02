@@ -9,6 +9,8 @@ from res.LoadingBar import ANSI_string
 from res.NotionAPI import set_working_directory
 import json
 
+NO_secret_json = False  #預設有SECRET.json檔案
+
 def generate_author_url(keyword):   #輸入作者後產生作者頁面之連結
     link = "https://search.books.com.tw/search/query/cat/1/v/1/adv_author/1/key/" + keyword
     print(link)
@@ -55,30 +57,34 @@ if __name__ == "__main__":
         if not os.path.exists(csv_directory):
             os.makedirs(csv_directory)
         file_path = os.path.join(csv_directory, keyword + ".csv")
-        df.to_csv(file_path,index=False,encoding='utf-8')
+        df.to_csv(file_path,index=False,encoding='utf-8')   #寫出成csv
         
-        current_directory = os.path.dirname(os.path.abspath(__file__))
-        if not os.path.exists(os.path.join(current_directory, "作者csv")):
-            os.makedirs(os.path.join(current_directory, "作者csv"))
-        file_path = os.path.join(current_directory, "作者csv" , keyword + ".csv")
-        df.to_csv(file_path,index=False,encoding='utf-8')
         
-        secret_json_path = os.getcwd() + '\\SECRET.json'
-        file = open(secret_json_path)
-        data = json.load(file)
-        #integration
-        NOTION_TOKEN = data['notion_id']
-        #Page
-        PAGE_ID = data['page_id']
-        file.close()
+        set_working_directory()
+        # 檢查是否存在 SECRET.json 檔案
+        secret_json_path = os.path.join(os.getcwd(), 'SECRET.json')
+        if os.path.exists(secret_json_path):
+            # 讀取 JSON 檔案
+            with open(secret_json_path) as file:
+                data = json.load(file)
+            # 取得 integration 和 Database 資訊
+            NOTION_TOKEN = data.get('notion_id')
+            PAGE_ID = data.get('page_id')
+            file.close()
+        else:
+            NO_secret_json = True
         
         if(NOTION_TOKEN != "" or PAGE_ID != ""):
             upload = input('是否要將資料匯入Notion(y/n)\n')
             if(upload=='y'):
-                NotionAPI.EstablishFullDatabase(keyword=keyword,df=df)
+                NotionAPI.EstablishFullDatabase(keyword=keyword,df=df,page_id=PAGE_ID)
             else:
                 print('未啟用自動上傳，可以使用Notion的匯入csv功能建立database')
-        else:
-            print('未偵測到SECRET.json裡的Notion id')    
+        elif(NO_secret_json):
+            print(ANSI_string(s='SECRET.json不存在，請確保有使用SetUp.exe輸入您的整合密碼及Page連結',color='red'))
+        elif(NOTION_TOKEN == ""):
+            print(ANSI_string(s='無效的整合密碼，請確認頁面是否成功連結到您的integration，或是再次檢查整合密碼是否有誤',color='red'))
+        elif(PAGE_ID == ""):
+            print(ANSI_string(s='無效的Page ID，請再次確認連結無誤',color='red'))
     else:
         print('存取被拒')
